@@ -1,0 +1,10 @@
+{
+  "name": "ai-collaborative-platform",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "typescript": "^4.9.0",
+    "recharts": "^2.0.0",
+    "@mui/material": "^5.0.0"
+  }
+}

@@ -1,0 +1,4 @@
+openapi: 3.0.0
+info:
+  title: AI Collaborative Platform API
+  version: 1.0.0
