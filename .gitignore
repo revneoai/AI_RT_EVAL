@@ -46,4 +46,15 @@ htmlcov/
 .streamlit/
 
 # Misc
-.DS_Store 
+.DS_Store
+
+# Large Data Files
+data/*.csv
+data/*.parquet
+data/*.xlsx
+data/raw/*
+data/processed/*
+
+# But keep sample data
+!data/samples/*.csv
+!data/samples/*.parquet 

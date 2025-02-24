@@ -1,0 +1,85 @@
+name: Real Estate Analytics Integration
+
+on:
+  # Trigger on push and pull requests
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  # Periodic checks
+  schedule:
+    - cron: '0 */6 * * *'  # Runs every 6 hours
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black mypy
+    
+    - name: Run code quality checks
+      run: |
+        black . --check
+        mypy .
+    
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=./ --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      
+    - name: Check data integrity
+      run: |
+        python scripts/verify_data_structure.py
+        python scripts/validate_exports.py
+    
+    - name: Sync data directories
+      run: |
+        python scripts/sync_data_dirs.py
+    
+    - name: Create integration report
+      run: |
+        echo "Integration Report" > integration_report.md
+        echo "Timestamp: $(date)" >> integration_report.md
+        echo "Branch: ${{ github.ref }}" >> integration_report.md
+        echo "Commit: ${{ github.sha }}" >> integration_report.md
+    
+    - name: Upload integration report
+      uses: actions/upload-artifact@v3
+      with:
+        name: integration-report
+        path: integration_report.md
+
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Integration Failure',
+            body: 'Integration failed on ${{ github.ref }} at ${{ github.sha }}'
+          }) 

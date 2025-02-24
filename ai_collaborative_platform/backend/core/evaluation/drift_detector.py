@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import numpy as np
 from scipy.stats import entropy
 from scipy.special import kl_div
@@ -45,4 +45,44 @@ class DriftDetector:
 
     def _compute_kl_divergence(self, p: np.ndarray, q: np.ndarray) -> float:
         """Compute KL divergence between two distributions"""
-        return float(np.sum(kl_div(p, q))) 
+        return float(np.sum(kl_div(p, q)))
+
+    def compute_kl_divergence(baseline: Union[pd.Series, List], 
+                            current: Union[pd.Series, List],
+                            bins: int = 50) -> float:
+        """
+        Compute KL divergence between baseline and current distributions
+        
+        Args:
+            baseline: Baseline data distribution
+            current: Current data distribution
+            bins: Number of bins for histogram
+        
+        Returns:
+            float: KL divergence score
+        """
+        try:
+            # Convert to numpy arrays if needed
+            baseline = np.array(baseline)
+            current = np.array(current)
+            
+            # Calculate histograms
+            hist_baseline, bins = np.histogram(baseline, bins=bins, density=True)
+            hist_current, _ = np.histogram(current, bins=bins, density=True)
+            
+            # Add small constant to avoid division by zero
+            hist_baseline = hist_baseline + 1e-10
+            hist_current = hist_current + 1e-10
+            
+            # Normalize
+            hist_baseline = hist_baseline / hist_baseline.sum()
+            hist_current = hist_current / hist_current.sum()
+            
+            # Compute KL divergence
+            kl_div = entropy(hist_current, hist_baseline)
+            
+            return float(kl_div)
+            
+        except Exception as e:
+            print(f"Error computing KL divergence: {str(e)}")
+            return 0.0 
